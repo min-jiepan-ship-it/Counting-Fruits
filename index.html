@@ -65,6 +65,7 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            min-width: 0; /* 防止 flex 溢出 */
         }
 
         #canvas-container {
@@ -93,6 +94,7 @@
             background: #fdfdfd;
             border-radius: 20px;
             border: 1px solid #eee;
+            min-width: 250px;
         }
 
         .header {
@@ -183,8 +185,8 @@
 
         .modal-content {
             background: var(--modal-bg);
-            width: 350px;
-            padding: 30px;
+            width: 320px;
+            padding: 25px;
             border-radius: 25px;
             text-align: center;
             box-shadow: 0 15px 30px rgba(0,0,0,0.1);
@@ -197,13 +199,13 @@
         }
 
         .modal-title {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             margin-bottom: 10px;
             font-weight: bold;
         }
 
         .modal-icon {
-            font-size: 4rem;
+            font-size: 3.5rem;
             margin: 10px 0;
         }
 
@@ -233,7 +235,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
         }
 
@@ -251,9 +253,10 @@
         .summary-table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.9rem;
         }
         .summary-table th, .summary-table td {
-            border: 1px solid #f0f0f0; padding: 10px; text-align: center;
+            border: 1px solid #f0f0f0; padding: 8px; text-align: center;
         }
         .summary-table th { background: var(--primary-blue); color: white; position: sticky; top: 0; }
         .row-success { background: #f2fff9; color: #2ecc71; font-weight: bold; }
@@ -293,10 +296,10 @@
 
         <!-- 開始畫面 -->
         <div id="start-screen" class="overlay-screen">
-            <h1 style="color: var(--primary-pink); font-size: 2.8rem; margin: 0;">數數大挑戰</h1>
-            <div style="font-size: 5rem; margin: 15px 0;">🍎🐶🚗</div>
-            <p style="font-size: 1.2rem; color: #666; margin-bottom: 25px;">聽聽語音指令，找出正確的數量吧！</p>
-            <button class="num-btn" style="width: 250px; background: var(--primary-blue); border-color: #7fb8e6; color: white; box-shadow: 0 5px 0 #7fb8e6;" onclick="game.startFromMenu()">進入遊戲</button>
+            <h1 style="color: var(--primary-pink); font-size: 2.5rem; margin: 0;">數數大挑戰</h1>
+            <div style="font-size: 4rem; margin: 10px 0;">🍎🐶🚗</div>
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 20px;">觀察畫面，選出正確的數量吧！</p>
+            <button class="num-btn" style="width: 220px; background: var(--primary-blue); border-color: #7fb8e6; color: white; box-shadow: 0 5px 0 #7fb8e6;" onclick="game.startFromMenu()">進入遊戲</button>
         </div>
 
         <!-- 遊戲主體 -->
@@ -337,7 +340,7 @@
                     <tbody id="summary-body"></tbody>
                 </table>
             </div>
-            <button class="num-btn" style="width: 220px; margin-top: 15px;" onclick="location.reload()">再玩一次</button>
+            <button class="num-btn" style="width: 200px; margin-top: 15px;" onclick="location.reload()">再玩一次</button>
         </div>
     </div>
 
@@ -387,8 +390,15 @@
             }
 
             initUI() {
+                // 初次調整畫布
                 this.resizeCanvas();
+                
+                // 監聽視窗調整或手機翻轉事件
                 window.addEventListener('resize', () => this.resizeCanvas());
+                window.addEventListener('orientationchange', () => {
+                    // 給予瀏覽器一點點時間處理佈局變化
+                    setTimeout(() => this.resizeCanvas(), 200);
+                });
                 
                 buttonGrid.innerHTML = '';
                 for(let i=1; i<=15; i++) {
@@ -401,13 +411,29 @@
                 musicToggle.onclick = () => this.toggleMusic();
             }
 
+            // 修正座標翻轉調整核心邏輯
             resizeCanvas() {
                 const container = document.getElementById('canvas-container');
-                if (container.clientWidth > 0) {
-                    canvas.width = container.clientWidth;
-                    canvas.height = container.clientHeight;
+                const oldW = canvas.width;
+                const oldH = canvas.height;
+                const newW = container.clientWidth;
+                const newH = container.clientHeight;
+
+                if (newW > 0 && newH > 0) {
+                    canvas.width = newW;
+                    canvas.height = newH;
+
+                    // 如果已經有物件，按比例縮放位置，防止旋轉後物件跑出畫布
+                    if (this.objects.length > 0 && oldW > 0 && oldH > 0) {
+                        const scaleX = newW / oldW;
+                        const scaleY = newH / oldH;
+                        this.objects.forEach(obj => {
+                            obj.x *= scaleX;
+                            obj.y *= scaleY;
+                        });
+                    }
                 }
-                if (this.objects.length > 0) this.draw();
+                this.draw();
             }
 
             initBodyBackground() {
@@ -454,7 +480,6 @@
                 this.targetEmoji = currentPool[0];
                 targetDisplay.innerText = this.targetEmoji;
 
-                // 1-5 關限制
                 let totalObjects = 0;
                 if (this.level <= 5) {
                     totalObjects = 5;
@@ -480,7 +505,7 @@
             }
 
             addNonOverlappingObject(emoji) {
-                const padding = 45; 
+                const padding = 50; 
                 let x, y, overlap;
                 let attempts = 0;
                 while(attempts < 300) {
@@ -488,7 +513,7 @@
                     x = padding + Math.random() * (canvas.width - padding * 2);
                     y = padding + Math.random() * (canvas.height - padding * 2);
                     for(let obj of this.objects) {
-                        if(Math.hypot(x - obj.x, y - obj.y) < 55) { overlap = true; break; }
+                        if(Math.hypot(x - obj.x, y - obj.y) < 60) { overlap = true; break; }
                     }
                     if(!overlap) {
                         this.objects.push({ emoji, x, y, rotation: Math.random()*0.4-0.2, scale: 0.9+Math.random()*0.3 });
@@ -502,11 +527,13 @@
             draw() {
                 if (canvas.width === 0 || canvas.height === 0) return;
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
                 // 背景大圖
                 ctx.save(); ctx.globalAlpha = 0.15;
                 const bgSize = Math.min(canvas.width, canvas.height) * 0.6;
                 ctx.font = `${bgSize}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText(this.bgEmoji, canvas.width / 2, canvas.height / 2); ctx.restore();
+                
                 // 物件
                 this.objects.forEach(obj => {
                     ctx.save(); ctx.translate(obj.x, obj.y); ctx.rotate(obj.rotation);
@@ -523,7 +550,7 @@
                     timerText.innerText = `⏱ ${this.timeLeft}s`;
                     if(this.timeLeft <= 0) {
                         clearInterval(this.timerInterval);
-                        this.handleAnswer(null); // 時間到
+                        this.handleAnswer(null);
                     }
                 }, 1000);
             }
@@ -532,7 +559,6 @@
                 if(this.isProcessing) return;
                 this.isProcessing = true;
                 
-                // --- 暫停計時 ---
                 clearInterval(this.timerInterval);
                 window.speechSynthesis.cancel();
 
@@ -545,7 +571,6 @@
                     success: isCorrect
                 });
 
-                // --- 顯示 Modal ---
                 const statusIcon = document.getElementById('modal-status-icon');
                 const modalText = document.getElementById('modal-text');
                 const modalBtn = document.getElementById('modal-btn');
