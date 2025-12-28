@@ -86,7 +86,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 5px;
+            padding: 8px;
             background: #fdfdfd;
             border-radius: 20px;
             border: 1px solid #f0f0f0;
@@ -147,9 +147,10 @@
         }
         #music-toggle:active, .home-btn:active { transform: translateY(2px); box-shadow: 0 0px 0 var(--primary-blue); }
 
-        /* 題目區：佔比一半 */
+        /* 題目區：精確佔比一半 */
         .target-section {
-            flex: 1;
+            flex: 1 1 0%;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -159,7 +160,6 @@
             border-radius: 18px;
             margin-bottom: 8px;
             border: 2.5px dashed var(--primary-pink);
-            flex-shrink: 0;
         }
 
         .target-label { font-size: 1.2rem; font-weight: bold; color: #666; margin-bottom: 5px; }
@@ -177,9 +177,10 @@
             50% { transform: translateY(-10px) scale(1.05); }
         }
 
-        /* 數字按鈕區 */
+        /* 數字按鈕區：精確佔比另一半 */
         .button-grid {
-            flex: 1;
+            flex: 1 1 0%;
+            min-height: 0;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(3, 1fr);
@@ -207,6 +208,7 @@
 
         .num-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 var(--btn-black); background-color: #eee; }
 
+        /* 系統按鈕 */
         .system-btn {
             background: var(--primary-blue);
             border: 2.5px solid #6fa8dc;
@@ -308,6 +310,17 @@
         .summary-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .summary-table th, .summary-table td { border: 1px solid #f2f2f2; padding: 10px; text-align: center; }
         .summary-table th { background: var(--primary-blue); color: #2c5a85; position: sticky; top: 0; }
+
+        /* 針對窄高度螢幕調整 (iPad / 橫向手機) */
+        @media (max-height: 600px) {
+            .target-emoji { font-size: 3rem; }
+            .target-label { font-size: 1rem; }
+            .header { padding: 4px 10px; font-size: 0.8rem; margin-bottom: 4px; }
+            .settings-bar { padding: 4px 10px; margin-bottom: 4px; }
+            .num-btn { font-size: 1.2rem; }
+            .target-section { margin-bottom: 4px; }
+            #game-wrapper { padding: 8px; gap: 8px; }
+        }
 
         @media screen and (orientation: portrait) {
             #game-wrapper::before {
@@ -463,7 +476,7 @@
         };
 
         const praiseText = ["太棒了！", "真天才！", "完全正確！🌟", "你好厲害！", "做得好！"];
-        const encourageText = ["再接再厲！", "加油加油！", "別灰心喔！", "再試一次！"];
+        const encourageText = ["再接再遞！", "加油加油！", "別灰心喔！", "再試一次！"];
 
         class CountingGame {
             constructor() {
@@ -504,7 +517,6 @@
                 musicToggle.onclick = () => this.toggleMusic();
                 scaleSelect.onchange = (e) => {
                     this.globalScale = parseFloat(e.target.value);
-                    // 切換比例時立即重新分配位置
                     this.repositionCurrentObjects();
                 };
             }
@@ -601,26 +613,17 @@
                 this.startTimer();
             }
 
-            // 優化後的防重疊核心邏輯
             addNonOverlappingObject(emoji) {
                 const baseFontSize = 36;
-                // 根據當前 globalScale 動態計算碰撞半徑
-                // 設半徑為字體大小的一半再乘上安全係數
                 const radius = (baseFontSize * this.globalScale) * 0.65;
-                // Padding 確保物體不會邊緣超出畫布
                 const padding = baseFontSize * this.globalScale * 0.8;
-                
                 let x, y, overlap, attempts = 0;
                 const w = canvas.width, h = canvas.height;
-                
-                // 大幅增加嘗試次數以在 200% 情況下找到空間
                 while(attempts < 1500) { 
                     overlap = false;
                     x = padding + Math.random() * (w - padding * 2);
                     y = padding + Math.random() * (h - padding * 2);
-                    
                     for(let obj of this.objects) {
-                        // 兩點距離需大於兩者半徑之和 (這裡簡化使用固定半徑)
                         if(Math.hypot(x - obj.x, y - obj.y) < radius * 2) { 
                             overlap = true; 
                             break; 
@@ -632,14 +635,7 @@
                     }
                     attempts++;
                 }
-                // 保底邏輯：如果真的擠不進去，至少要在隨機位置，不再集中在左上角
-                this.objects.push({ 
-                    emoji, 
-                    x: padding + Math.random() * (w - padding * 2), 
-                    y: padding + Math.random() * (h - padding * 2), 
-                    rotation: 0, 
-                    scale: 0.7 
-                });
+                this.objects.push({ emoji, x: padding + Math.random() * (w - padding * 2), y: padding + Math.random() * (h - padding * 2), rotation: 0, scale: 0.7 });
             }
 
             draw() {
@@ -651,7 +647,6 @@
                 ctx.fillText(this.bgEmoji, canvas.width / 2, canvas.height / 2); ctx.restore();
                 this.objects.forEach(obj => {
                     ctx.save(); ctx.translate(obj.x, obj.y); ctx.rotate(obj.rotation);
-                    // 實際繪製大小 = 基礎字號 * 個體隨機縮放 * 全域比例
                     ctx.font = `${36 * obj.scale * this.globalScale}px serif`; 
                     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                     ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 4;
@@ -731,12 +726,10 @@
                 const name = nameInput.value.trim() || '無名英雄';
                 let board = JSON.parse(localStorage.getItem('counting_ranks') || '[]');
                 board.push({ name, success: this.successCount, time: this.totalTimeUsed });
-                
                 board.sort((a, b) => {
                     if (b.success !== a.success) return b.success - a.success;
                     return a.time - b.time;
                 });
-                
                 board = board.slice(0, 5);
                 localStorage.setItem('counting_ranks', JSON.stringify(board));
                 document.getElementById('name-modal').style.display = 'none';
@@ -747,12 +740,10 @@
                 const board = JSON.parse(localStorage.getItem('counting_ranks') || '[]');
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
-                
                 if(board.length === 0) {
                     body.innerHTML = '<tr><td colspan="4">尚無紀錄，等你來挑戰！</td></tr>';
                     return;
                 }
-
                 board.forEach((item, index) => {
                     const row = document.createElement('tr');
                     const rankGoldClass = index === 0 ? 'rank-gold' : '';
