@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape">
+    <title>可愛卡通：指定物件數數大挑戰 (純淨排行版)</title>
+    <style>
+        :root {
+            --bg-color: #fffafc;
+            --primary-pink: #ffc8dd;
+            --primary-blue: #bde0fe;
+            --accent-soft: #cdb4db;
+            --text-dark: #3d3d3d;
+            --white: #ffffff;
+            --btn-black: #222222;
+            --modal-bg: rgba(255, 255, 255, 0.98);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 全域背景動畫 */
+        #bg-animation {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            font-size: 10rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.04;
+            user-select: none;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #game-wrapper {
+            width: 98vw;
+            height: 96vh;
+            max-width: 1100px;
+            max-height: 700px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 25px;
+            box-shadow: 0 12px 45px rgba(0,0,0,0.08);
+            display: flex;
+            padding: 12px;
+            gap: 12px;
+            position: relative;
+            backdrop-filter: blur(8px);
+        }
+
+        /* 左側：畫布區 */
+        .left-panel {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            border: 5px solid var(--primary-blue);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(162, 210, 255, 0.15);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* 右側：控制區 */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 5px;
+            background: #fdfdfd;
+            border-radius: 20px;
+            border: 1px solid #f0f0f0;
+            min-width: 200px;
+            overflow: hidden; 
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--accent-soft);
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #4a4a4a;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .settings-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8fbff;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            border: 1.5px solid var(--primary-blue);
+            flex-shrink: 0;
+        }
+
+        .scale-select {
+            padding: 3px 6px;
+            border-radius: 6px;
+            border: 1.5px solid var(--primary-blue);
+            background: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #music-toggle, .home-btn {
+            background: var(--white);
+            border: 2px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            box-shadow: 0 3px 0 var(--primary-blue);
+            transition: 0.2s;
+        }
+        #music-toggle:active, .home-btn:active { transform: translateY(2px); box-shadow: 0 0px 0 var(--primary-blue); }
+
+        /* 題目區：佔比一半 */
+        .target-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: #fffcfd;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            border: 2.5px dashed var(--primary-pink);
+            flex-shrink: 0;
+        }
+
+        .target-label { font-size: 1.2rem; font-weight: bold; color: #666; margin-bottom: 5px; }
+
+        .target-emoji {
+            font-size: 4.5rem;
+            display: block;
+            margin: 5px 0;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.05));
+            animation: bounce 2.5s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        /* 數字按鈕區 */
+        .button-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .num-btn {
+            background: var(--white);
+            border: 2.5px solid var(--btn-black);
+            border-radius: 15px;
+            padding: 0;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--btn-black);
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 5px 0 var(--btn-black);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .num-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 var(--btn-black); background-color: #eee; }
+
+        .system-btn {
+            background: var(--primary-blue);
+            border: 2.5px solid #6fa8dc;
+            border-radius: 18px;
+            color: #2c5a85;
+            font-weight: 900;
+            font-size: 1.3rem;
+            box-shadow: 0 5px 0 #6fa8dc;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 20px;
+            text-decoration: none;
+        }
+        .system-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 #6fa8dc; }
+
+        .btn-danger {
+            background: #ffadad;
+            border-color: #ff8585;
+            color: #7d2e2e;
+            box-shadow: 0 5px 0 #ff8585;
+        }
+        .btn-danger:active { box-shadow: 0 0 0 #ff8585; }
+
+        /* 排行榜樣式 */
+        .leaderboard-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid var(--accent-soft);
+        }
+        .leaderboard-title { font-size: 1.2rem; font-weight: bold; color: var(--accent-soft); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .leaderboard-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .leaderboard-table th { border-bottom: 2px solid #eee; padding: 5px; color: #888; }
+        .leaderboard-table td { padding: 8px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
+        .rank-gold { color: #d4af37; font-weight: bold; }
+
+        /* 彈窗 */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            border-radius: 25px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            width: 320px;
+            padding: 25px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .name-input { width: 100%; padding: 10px; border-radius: 12px; border: 2px solid var(--primary-blue); margin: 15px 0; outline: none; font-size: 1rem; text-align: center; }
+
+        .overlay-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--white);
+            z-index: 100;
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #result-screen { display: none; overflow-y: auto; }
+
+        .summary-wrapper {
+            width: 100%;
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 12px;
+            border-radius: 15px;
+            border: 1px solid #eee;
+        }
+
+        .summary-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .summary-table th, .summary-table td { border: 1px solid #f2f2f2; padding: 10px; text-align: center; }
+        .summary-table th { background: var(--primary-blue); color: #2c5a85; position: sticky; top: 0; }
+
+        @media screen and (orientation: portrait) {
+            #game-wrapper::before {
+                content: "請旋轉手機使用橫式遊玩 🔄";
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: var(--primary-blue); color: #2c5a85;
+                z-index: 1000; display: flex; justify-content: center; align-items: center;
+                font-size: 1.3rem; font-weight: bold; border-radius: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bg-animation">🐰</div>
+
+    <audio id="bgm" loop preload="auto">
+        <source src="bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="game-wrapper">
+        <!-- 確認回到首頁彈窗 -->
+        <div id="home-confirm-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div style="font-size: 3.5rem;">🏠</div>
+                <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 10px;">要回到首頁嗎？</div>
+                <p>現在離開的話，目前的進度會消失喔！</p>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="system-btn btn-danger" style="flex: 1; font-size: 1rem;" onclick="location.reload()">確定離開</button>
+                    <button class="system-btn" style="flex: 1; font-size: 1rem;" onclick="game.closeHomeModal()">繼續遊戲</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中場彈窗 -->
+        <div id="feedback-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modal-status-icon" style="font-size: 3.5rem;">✅</div>
+                <div id="modal-text" style="font-size: 1.4rem; font-weight: bold; margin-bottom: 8px;">太棒了！</div>
+                <p id="modal-detail">正確答案是：<span id="modal-ans-val">0</span></p>
+                <button id="modal-btn" class="system-btn" style="width: 100%; margin-top: 15px;" onclick="game.proceedNext()">下一關</button>
+            </div>
+        </div>
+
+        <!-- 排名登記彈窗 -->
+        <div id="name-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-soft);">🏆 榮登排行榜！</div>
+                <p>你的表現太出色了，請留下大名：</p>
+                <input type="text" id="player-name" class="name-input" maxlength="8" placeholder="你的暱稱">
+                <button class="system-btn" style="width: 100%;" onclick="game.saveRank()">提交紀錄</button>
+            </div>
+        </div>
+
+        <!-- 開始畫面 -->
+        <div id="start-screen" class="overlay-screen">
+            <h1 style="color: var(--btn-black); font-size: 2.5rem; margin: 0;">數數大挑戰</h1>
+            <div style="font-size: 4rem; margin: 15px 0;">🍎🚗✨</div>
+            <button class="system-btn" style="width: 220px; height: 65px; margin-bottom: 10px;" onclick="game.startFromMenu()">進入遊戲</button>
+            
+            <div class="leaderboard-container">
+                <div class="leaderboard-title">🏆 榮譽榜 (Top 5)</div>
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr><th>名次</th><th>玩家</th><th>成功</th><th>時間</th></tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- 由 JS 填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 遊戲主體 -->
+        <div class="left-panel">
+            <div id="canvas-container">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="header">
+                <div>關卡 <span id="current-level">1</span>/10</div>
+                <div id="timer-text">⏱ 60s</div>
+                <button id="music-toggle" title="切換音樂開關">🔊</button>
+            </div>
+
+            <div class="settings-bar">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>大小：</span>
+                    <select id="scale-select" class="scale-select">
+                        <option value="2">200%</option>
+                        <option value="1.5">150%</option>
+                        <option value="1.25">125%</option>
+                        <option value="1" selected>100%</option>
+                        <option value="0.75">75%</option>
+                    </select>
+                </div>
+                <button class="home-btn" title="回到首頁" onclick="game.showHomeModal()">🏠</button>
+            </div>
+
+            <div class="target-section">
+                <div class="target-label">數數看：</div>
+                <span id="target-display" class="target-emoji">🍎</span>
+            </div>
+
+            <div class="button-grid" id="button-grid"></div>
+        </div>
+
+        <!-- 結算畫面 -->
+        <div id="result-screen" class="overlay-screen">
+            <h2 style="color: var(--btn-black); margin: 0;">🎉 任務完成！ 🎉</h2>
+            <div style="display: flex; gap: 20px; margin: 10px 0;">
+                <h3 style="margin: 0;">成功：<span id="final-success" style="color: #27ae60;">0</span>/10</h3>
+                <h3 style="margin: 0;">總耗時：<span id="final-time" style="color: #2c5a85;">0</span>s</h3>
+            </div>
+            <div class="summary-wrapper">
+                <table class="summary-table">
+                    <thead>
+                        <tr><th>關卡</th><th>目標</th><th>正確</th><th>你的答案</th><th>結果</th></tr>
+                    </thead>
+                    <tbody id="summary-body"></tbody>
+                </table>
+            </div>
+            <button class="system-btn" style="width: 180px; height: 55px; margin-top: 15px;" onclick="location.reload()">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const timerText = document.getElementById('timer-text');
+        const levelText = document.getElementById('current-level');
+        const targetDisplay = document.getElementById('target-display');
+        const buttonGrid = document.getElementById('button-grid');
+        const summaryBody = document.getElementById('summary-body');
+        const bgEl = document.getElementById('bg-animation');
+        const bgm = document.getElementById('bgm');
+        const musicToggle = document.getElementById('music-toggle');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const scaleSelect = document.getElementById('scale-select');
+
+        const animals = ['🐶', '🐱', '🐰', '🐼', '🐨', '🐷', '🦁', '🐵', '🐸', '🦊'];
+        const itemsPool = ['🍎','🍊','🍓','🍒','🍑','🍇','🍉','🍍','🚗','🚌','✈️','🚀','🚜','🚢','🚲'];
+        
+        const emojiDict = {
+            '🍎': '蘋果', '🍊': '橘子', '🍓': '草莓', '🍒': '櫻桃', '桃': '水蜜桃',
+            '🍇': '葡萄', '🍉': '西瓜', '🍍': '鳳梨', '🚗': '小汽車', '🚌': '公車',
+            '✈️': '飛機', '🚀': '火箭', '🚜': '耕耘機', '🚢': '輪船', '🚲': '腳踏車',
+            '🐶': '小狗', '🐱': '小貓', '🐰': '兔子', '🐼': '熊貓', '🐨': '無尾熊',
+            '🐷': '小豬', '🦁': '獅子', '🐵': '猴子', '🐸': '青蛙', '🦊': '狐狸'
+        };
+
+        const praiseText = ["太棒了！", "真天才！", "完全正確！🌟", "你好厲害！", "做得好！"];
+        const encourageText = ["再接再厲！", "加油加油！", "別灰心喔！", "再試一次！"];
+
+        class CountingGame {
+            constructor() {
+                this.level = 1;
+                this.maxLevel = 10;
+                this.score = 0;
+                this.successCount = 0;
+                this.totalTimeUsed = 0;
+                this.timeLeft = 60;
+                this.timerInterval = null;
+                this.history = [];
+                this.targetEmoji = '';
+                this.targetCount = 0;
+                this.isProcessing = false;
+                this.isPaused = false;
+                this.objects = [];
+                this.isMuted = false;
+                this.globalScale = 1.0; 
+
+                this.initUI();
+                this.initBodyBackground();
+                this.loadLeaderboard();
+            }
+
+            initUI() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                window.addEventListener('orientationchange', () => setTimeout(() => this.resizeCanvas(), 300));
+                
+                buttonGrid.innerHTML = '';
+                for(let i=1; i<=15; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'num-btn';
+                    btn.innerText = i;
+                    btn.onclick = () => this.handleAnswer(i);
+                    buttonGrid.appendChild(btn);
+                }
+                musicToggle.onclick = () => this.toggleMusic();
+                scaleSelect.onchange = (e) => {
+                    this.globalScale = parseFloat(e.target.value);
+                    // 切換比例時立即重新分配位置
+                    this.repositionCurrentObjects();
+                };
+            }
+
+            resizeCanvas() {
+                const container = document.getElementById('canvas-container');
+                const oldW = canvas.width, oldH = canvas.height;
+                const newW = container.clientWidth, newH = container.clientHeight;
+                if (newW > 0 && newH > 0) {
+                    canvas.width = newW; canvas.height = newH;
+                    if (this.objects.length > 0 && oldW > 0 && oldH > 0) {
+                        const scaleX = newW / oldW, scaleY = newH / oldH;
+                        this.objects.forEach(obj => { obj.x *= scaleX; obj.y *= scaleY; });
+                    }
+                }
+                this.draw();
+            }
+
+            repositionCurrentObjects() {
+                if (this.objects.length === 0) return;
+                const currentEmojis = this.objects.map(obj => obj.emoji);
+                this.objects = [];
+                currentEmojis.forEach(emoji => this.addNonOverlappingObject(emoji));
+                this.draw();
+            }
+
+            initBodyBackground() {
+                let idx = 0;
+                setInterval(() => {
+                    bgEl.style.opacity = 0;
+                    setTimeout(() => {
+                        idx = (idx + 1) % animals.length;
+                        bgEl.innerText = animals[idx];
+                        bgEl.style.opacity = 0.04;
+                    }, 1000);
+                }, 6000);
+            }
+
+            speakQuestion() {
+                window.speechSynthesis.cancel();
+                const name = emojiDict[this.targetEmoji] || '這個東西';
+                const utterance = new SpeechSynthesisUtterance(`請數一數，有幾個${name}？`);
+                utterance.lang = 'zh-TW';
+                window.speechSynthesis.speak(utterance);
+            }
+
+            startFromMenu() {
+                document.getElementById('start-screen').style.display = 'none';
+                bgm.play().catch(e => console.log('BGM Play Blocked'));
+                this.startLevel();
+            }
+
+            showHomeModal() {
+                this.isPaused = true;
+                document.getElementById('home-confirm-modal').style.display = 'flex';
+            }
+
+            closeHomeModal() {
+                this.isPaused = false;
+                document.getElementById('home-confirm-modal').style.display = 'none';
+            }
+
+            toggleMusic() {
+                this.isMuted = !this.isMuted;
+                bgm.muted = this.isMuted;
+                musicToggle.innerText = this.isMuted ? '🔇' : '🔊';
+            }
+
+            startLevel() {
+                this.isProcessing = false;
+                this.isPaused = false;
+                this.timeLeft = 60;
+                timerText.innerText = `⏱ ${this.timeLeft}s`;
+                levelText.innerText = this.level;
+                feedbackModal.style.display = 'none';
+
+                this.bgEmoji = animals[Math.floor(Math.random() * animals.length)];
+                const currentPool = this.shuffle([...itemsPool]).slice(0, 6);
+                this.targetEmoji = currentPool[0];
+                targetDisplay.innerText = this.targetEmoji;
+
+                this.targetCount = 2 + this.level; 
+                const distractorCount = 2 + Math.floor(this.level / 2);
+
+                this.objects = [];
+                for(let i=0; i < this.targetCount; i++) this.addNonOverlappingObject(this.targetEmoji);
+                for(let i=0; i < distractorCount; i++) {
+                    const emoji = currentPool[Math.floor(Math.random() * (currentPool.length - 1)) + 1];
+                    this.addNonOverlappingObject(emoji);
+                }
+
+                this.draw();
+                this.speakQuestion();
+                this.startTimer();
+            }
+
+            // 優化後的防重疊核心邏輯
+            addNonOverlappingObject(emoji) {
+                const baseFontSize = 36;
+                // 根據當前 globalScale 動態計算碰撞半徑
+                // 設半徑為字體大小的一半再乘上安全係數
+                const radius = (baseFontSize * this.globalScale) * 0.65;
+                // Padding 確保物體不會邊緣超出畫布
+                const padding = baseFontSize * this.globalScale * 0.8;
+                
+                let x, y, overlap, attempts = 0;
+                const w = canvas.width, h = canvas.height;
+                
+                // 大幅增加嘗試次數以在 200% 情況下找到空間
+                while(attempts < 1500) { 
+                    overlap = false;
+                    x = padding + Math.random() * (w - padding * 2);
+                    y = padding + Math.random() * (h - padding * 2);
+                    
+                    for(let obj of this.objects) {
+                        // 兩點距離需大於兩者半徑之和 (這裡簡化使用固定半徑)
+                        if(Math.hypot(x - obj.x, y - obj.y) < radius * 2) { 
+                            overlap = true; 
+                            break; 
+                        }
+                    }
+                    if(!overlap) {
+                        this.objects.push({ emoji, x, y, rotation: Math.random()*0.4-0.2, scale: 0.8+Math.random()*0.3 });
+                        return;
+                    }
+                    attempts++;
+                }
+                // 保底邏輯：如果真的擠不進去，至少要在隨機位置，不再集中在左上角
+                this.objects.push({ 
+                    emoji, 
+                    x: padding + Math.random() * (w - padding * 2), 
+                    y: padding + Math.random() * (h - padding * 2), 
+                    rotation: 0, 
+                    scale: 0.7 
+                });
+            }
+
+            draw() {
+                if (canvas.width === 0 || canvas.height === 0) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save(); ctx.globalAlpha = 0.15;
+                const bgSize = Math.min(canvas.width, canvas.height) * 0.6;
+                ctx.font = `${bgSize}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(this.bgEmoji, canvas.width / 2, canvas.height / 2); ctx.restore();
+                this.objects.forEach(obj => {
+                    ctx.save(); ctx.translate(obj.x, obj.y); ctx.rotate(obj.rotation);
+                    // 實際繪製大小 = 基礎字號 * 個體隨機縮放 * 全域比例
+                    ctx.font = `${36 * obj.scale * this.globalScale}px serif`; 
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 4;
+                    ctx.fillText(obj.emoji, 0, 0); ctx.restore();
+                });
+            }
+
+            startTimer() {
+                if(this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    if(this.isPaused) return;
+                    this.timeLeft--;
+                    timerText.innerText = `⏱ ${this.timeLeft}s`;
+                    if(this.timeLeft <= 0) { clearInterval(this.timerInterval); this.handleAnswer(null); }
+                }, 1000);
+            }
+
+            handleAnswer(userAns) {
+                if(this.isProcessing) return;
+                this.isProcessing = true;
+                clearInterval(this.timerInterval);
+                window.speechSynthesis.cancel();
+
+                const timeUsedThisLevel = 60 - this.timeLeft;
+                this.totalTimeUsed += timeUsedThisLevel;
+
+                const isCorrect = (userAns === this.targetCount);
+                if(isCorrect) {
+                    this.score += (10 + Math.floor(this.timeLeft / 6));
+                    this.successCount++;
+                }
+
+                this.history.push({
+                    level: this.level, target: this.targetEmoji,
+                    correct: this.targetCount, userAns: userAns || '超時', success: isCorrect
+                });
+
+                document.getElementById('modal-ans-val').innerText = this.targetCount;
+                const statusIcon = document.getElementById('modal-status-icon');
+                const modalText = document.getElementById('modal-text');
+
+                if(isCorrect) {
+                    statusIcon.innerText = "✅";
+                    modalText.innerText = praiseText[Math.floor(Math.random() * praiseText.length)];
+                } else {
+                    statusIcon.innerText = userAns === null ? "⏰" : "❌";
+                    modalText.innerText = encourageText[Math.floor(Math.random() * encourageText.length)];
+                }
+                feedbackModal.style.display = 'flex';
+            }
+
+            proceedNext() {
+                if(this.level < this.maxLevel) {
+                    this.level++;
+                    this.startLevel();
+                } else {
+                    this.checkLeaderboard();
+                }
+            }
+
+            checkLeaderboard() {
+                feedbackModal.style.display = 'none';
+                const board = JSON.parse(localStorage.getItem('counting_ranks') || '[]');
+                const isTop5 = board.length < 5 || 
+                               this.successCount > board[board.length-1].success ||
+                               (this.successCount === board[board.length-1].success && this.totalTimeUsed < board[board.length-1].time);
+
+                if(isTop5) {
+                    document.getElementById('name-modal').style.display = 'flex';
+                } else {
+                    this.endGame();
+                }
+            }
+
+            saveRank() {
+                const nameInput = document.getElementById('player-name');
+                const name = nameInput.value.trim() || '無名英雄';
+                let board = JSON.parse(localStorage.getItem('counting_ranks') || '[]');
+                board.push({ name, success: this.successCount, time: this.totalTimeUsed });
+                
+                board.sort((a, b) => {
+                    if (b.success !== a.success) return b.success - a.success;
+                    return a.time - b.time;
+                });
+                
+                board = board.slice(0, 5);
+                localStorage.setItem('counting_ranks', JSON.stringify(board));
+                document.getElementById('name-modal').style.display = 'none';
+                this.endGame();
+            }
+
+            loadLeaderboard() {
+                const board = JSON.parse(localStorage.getItem('counting_ranks') || '[]');
+                const body = document.getElementById('leaderboard-body');
+                body.innerHTML = '';
+                
+                if(board.length === 0) {
+                    body.innerHTML = '<tr><td colspan="4">尚無紀錄，等你來挑戰！</td></tr>';
+                    return;
+                }
+
+                board.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    const rankGoldClass = index === 0 ? 'rank-gold' : '';
+                    row.innerHTML = `
+                        <td class="${rankGoldClass}">${index + 1}</td>
+                        <td>${item.name}</td>
+                        <td>${item.success}/10</td>
+                        <td>${item.time}s</td>
+                    `;
+                    body.appendChild(row);
+                });
+            }
+
+            endGame() {
+                document.getElementById('result-screen').style.display = 'flex';
+                document.getElementById('final-success').innerText = this.successCount;
+                document.getElementById('final-time').innerText = this.totalTimeUsed;
+                summaryBody.innerHTML = '';
+                this.history.forEach(h => {
+                    const tr = document.createElement('tr');
+                    const statusClass = h.success ? 'row-success' : 'row-fail';
+                    tr.className = statusClass;
+                    tr.innerHTML = `<td>${h.level}</td><td style="font-size:1.4rem">${h.target}</td><td>${h.correct}</td><td>${h.userAns}</td><td>${h.success ? '成功' : '失敗'}</td>`;
+                    summaryBody.appendChild(tr);
+                });
+            }
+
+            shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+        }
+
+        let game;
+        window.onload = () => { game = new CountingGame(); };
+    </script>
+</body>
+</html>
