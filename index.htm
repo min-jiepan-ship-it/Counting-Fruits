@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape, viewport-fit=cover">
-    <title>可愛卡通：指定物件數數大挑戰 (iPad 優化版)</title>
+    <title>可愛卡通：指定物件數數大挑戰 (純淨優化版)</title>
     <style>
         :root {
             --bg-color: #fffafc;
@@ -28,12 +28,10 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            /* 針對 iPad 使用動態視窗高度 */
             min-height: -webkit-fill-available;
             overflow: hidden;
         }
 
-        /* 全域背景動畫 */
         #bg-animation {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -49,7 +47,7 @@
 
         #game-wrapper {
             width: 98vw;
-            height: 92vh; /* 稍微縮小以避開 iPad Safari 的 UI */
+            height: 92vh;
             max-width: 1200px;
             max-height: 800px;
             background: rgba(255, 255, 255, 0.96);
@@ -62,9 +60,8 @@
             backdrop-filter: blur(8px);
         }
 
-        /* 左側：畫布區 */
         .left-panel {
-            flex: 1.2; /* 稍微增加左側比例讓畫布更寬裕 */
+            flex: 1.2;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -89,7 +86,6 @@
             object-fit: contain; 
         }
 
-        /* 右側：控制區 */
         .right-panel {
             flex: 1;
             display: flex;
@@ -156,7 +152,6 @@
         }
         #music-toggle:active, .home-btn:active { transform: translateY(2px); box-shadow: 0 0px 0 var(--primary-blue); }
 
-        /* 題目區：強制精確佔比 */
         .target-section {
             flex: 1 1 0%;
             min-height: 0;
@@ -172,10 +167,10 @@
             padding: 5px;
         }
 
-        .target-label { font-size: 1rem; font-weight: bold; color: #666; }
+        .target-label { font-size: 1.1rem; font-weight: bold; color: #666; }
 
         .target-emoji {
-            font-size: clamp(2.5rem, 12vh, 4rem); /* 根據高度動態縮放 Emoji */
+            font-size: clamp(2.5rem, 12vh, 4rem);
             display: block;
             margin: 5px 0;
             filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.05));
@@ -187,14 +182,13 @@
             50% { transform: translateY(-8px) scale(1.05); }
         }
 
-        /* 數字按鈕區：強制精確佔比 */
         .button-grid {
             flex: 1 1 0%;
             min-height: 0;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 6px;
+            gap: 8px;
             width: 100%;
         }
 
@@ -203,7 +197,7 @@
             border: 2.5px solid var(--btn-black);
             border-radius: 15px;
             padding: 0;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 900;
             color: var(--btn-black);
             cursor: pointer;
@@ -218,7 +212,6 @@
 
         .num-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 var(--btn-black); background-color: #eee; }
 
-        /* 系統按鈕 */
         .system-btn {
             background: var(--primary-blue);
             border: 2.5px solid #6fa8dc;
@@ -243,9 +236,7 @@
             color: #7d2e2e;
             box-shadow: 0 5px 0 #ff8585;
         }
-        .btn-danger:active { box-shadow: 0 0 0 #ff8585; }
 
-        /* 排行榜樣式 */
         .leaderboard-container {
             margin-top: 15px;
             width: 100%;
@@ -263,7 +254,6 @@
         .leaderboard-table th { border-bottom: 2px solid #eee; padding: 5px; color: #888; }
         .leaderboard-table td { padding: 6px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
 
-        /* 彈窗 */
         .modal-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -322,20 +312,11 @@
         .summary-table th, .summary-table td { border: 1px solid #f2f2f2; padding: 10px; text-align: center; }
         .summary-table th { background: var(--primary-blue); color: #2c5a85; position: sticky; top: 0; }
 
-        /* 針對窄高度螢幕調整 (iPad / 橫向手機) */
         @media (max-height: 800px) {
             .target-emoji { font-size: 3.5rem; }
             .header, .settings-bar { padding: 6px 12px; margin-bottom: 4px; font-size: 0.85rem; }
             .num-btn { font-size: 1.3rem; }
-            .target-section { margin-bottom: 4px; }
             #game-wrapper { height: 95vh; padding: 10px; gap: 10px; }
-        }
-
-        @media (max-height: 650px) {
-            .target-emoji { font-size: 2.8rem; }
-            .target-label { font-size: 0.9rem; }
-            .num-btn { font-size: 1.2rem; }
-            .header, .settings-bar { padding: 4px 10px; font-size: 0.8rem; }
         }
 
         @media screen and (orientation: portrait) {
@@ -359,7 +340,6 @@
     </audio>
 
     <div id="game-wrapper">
-        <!-- 確認回到首頁彈窗 -->
         <div id="home-confirm-modal" class="modal-overlay">
             <div class="modal-content">
                 <div style="font-size: 3.5rem;">🏠</div>
@@ -372,7 +352,6 @@
             </div>
         </div>
 
-        <!-- 中場彈窗 -->
         <div id="feedback-modal" class="modal-overlay">
             <div class="modal-content">
                 <div id="modal-status-icon" style="font-size: 3.5rem;">✅</div>
@@ -382,7 +361,6 @@
             </div>
         </div>
 
-        <!-- 排名登記彈窗 -->
         <div id="name-modal" class="modal-overlay">
             <div class="modal-content">
                 <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-soft);">🏆 榮登排行榜！</div>
@@ -392,7 +370,6 @@
             </div>
         </div>
 
-        <!-- 開始畫面 -->
         <div id="start-screen" class="overlay-screen">
             <h1 style="color: var(--btn-black); font-size: 2.5rem; margin: 0;">數數大挑戰</h1>
             <div style="font-size: 4rem; margin: 15px 0;">🍎🚗✨</div>
@@ -404,14 +381,11 @@
                     <thead>
                         <tr><th>名次</th><th>玩家</th><th>成功</th><th>時間</th></tr>
                     </thead>
-                    <tbody id="leaderboard-body">
-                        <!-- 由 JS 填充 -->
-                    </tbody>
+                    <tbody id="leaderboard-body"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 遊戲主體 -->
         <div class="left-panel">
             <div id="canvas-container">
                 <canvas id="gameCanvas"></canvas>
@@ -447,7 +421,6 @@
             <div class="button-grid" id="button-grid"></div>
         </div>
 
-        <!-- 結算畫面 -->
         <div id="result-screen" class="overlay-screen">
             <h2 style="color: var(--btn-black); margin: 0;">🎉 任務完成！ 🎉</h2>
             <div style="display: flex; gap: 20px; margin: 10px 0;">
@@ -614,7 +587,15 @@
                 this.targetEmoji = currentPool[0];
                 targetDisplay.innerText = this.targetEmoji;
 
-                this.targetCount = 2 + this.level; 
+                // --- 修正需求：初始 5 個，每關增加 1 個，且答案隨機偏移 ---
+                // 基礎值：level 1 為 5
+                const baseCount = 4 + this.level;
+                // 隨機偏移量：-1, 0, +1 
+                const offset = Math.floor(Math.random() * 3) - 1;
+                // 計算結果並限制在按鈕範圍 1-15 內
+                this.targetCount = Math.max(1, Math.min(15, baseCount + offset));
+
+                // 干擾項數量
                 const distractorCount = 2 + Math.floor(this.level / 2);
 
                 this.objects = [];
@@ -685,25 +666,20 @@
                 this.isProcessing = true;
                 clearInterval(this.timerInterval);
                 window.speechSynthesis.cancel();
-
                 const timeUsedThisLevel = 60 - this.timeLeft;
                 this.totalTimeUsed += timeUsedThisLevel;
-
                 const isCorrect = (userAns === this.targetCount);
                 if(isCorrect) {
                     this.score += (10 + Math.floor(this.timeLeft / 6));
                     this.successCount++;
                 }
-
                 this.history.push({
                     level: this.level, target: this.targetEmoji,
                     correct: this.targetCount, userAns: userAns || '超時', success: isCorrect
                 });
-
                 document.getElementById('modal-ans-val').innerText = this.targetCount;
                 const statusIcon = document.getElementById('modal-status-icon');
                 const modalText = document.getElementById('modal-text');
-
                 if(isCorrect) {
                     statusIcon.innerText = "✅";
                     modalText.innerText = praiseText[Math.floor(Math.random() * praiseText.length)];
@@ -729,7 +705,6 @@
                 const isTop5 = board.length < 5 || 
                                this.successCount > board[board.length-1].success ||
                                (this.successCount === board[board.length-1].success && this.totalTimeUsed < board[board.length-1].time);
-
                 if(isTop5) {
                     document.getElementById('name-modal').style.display = 'flex';
                 } else {
