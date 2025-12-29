@@ -526,8 +526,14 @@
 
                 this.objects = [];
                 for(let i=0; i < this.targetCount; i++) this.addNonOverlappingObject(this.targetEmoji);
+                
+                // 確保干擾圖案不與目標相同
                 for(let i=0; i < distractorCount; i++) {
-                    const emoji = itemsPool[Math.floor(Math.random() * itemsPool.length)];
+                    let emoji;
+                    do {
+                        emoji = itemsPool[Math.floor(Math.random() * itemsPool.length)];
+                    } while (emoji === this.targetEmoji);
+                    
                     this.addNonOverlappingObject(emoji);
                 }
 
@@ -542,7 +548,6 @@
                 const minScale = 0.8;
                 const maxScale = 1.1;
                 
-                let bestCandidate = null;
                 const maxAttempts = 2000; // 增加嘗試次數
                 
                 for (let i = 0; i < maxAttempts; i++) {
@@ -632,7 +637,10 @@
                 const timeUsedThisLevel = 60 - this.timeLeft;
                 this.totalTimeUsed += timeUsedThisLevel;
                 const isCorrect = (userAns === this.targetCount);
-                if(isCorrect) { this.successCount++; }
+                if(isCorrect) {
+                    this.score += (10 + Math.floor(this.timeLeft / 6));
+                    this.successCount++;
+                }
                 this.history.push({
                     level: this.level, target: this.targetEmoji,
                     correct: this.targetCount, userAns: userAns || '超時', success: isCorrect
@@ -651,8 +659,12 @@
             }
 
             proceedNext() {
-                if(this.level < this.maxLevel) { this.level++; this.startLevel(); }
-                else { this.checkLeaderboard(); }
+                if(this.level < this.maxLevel) {
+                    this.level++;
+                    this.startLevel();
+                } else {
+                    this.checkLeaderboard();
+                }
             }
 
             checkLeaderboard() {
